@@ -23,5 +23,5 @@ while True:
     print "\n" + message
     seq += 1
 
-    # Send a UDP Heartbeat packets every 10 seconds
-    time.sleep(10)
+    # Send a UDP Heartbeat packets every 2 seconds
+    time.sleep(2)

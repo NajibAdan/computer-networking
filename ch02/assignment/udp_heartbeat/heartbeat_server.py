@@ -10,7 +10,8 @@ seq = 1
 
 while True:
     # Receive the client packet along with the address it is coming from
-    serverSocket.settimeout(3 * 10)   # If server does not receive a heartbeat in 30 seconds, the client is considered dead
+    # If server does not receive a heartbeat in 5 seconds, the client is considered dead
+    serverSocket.settimeout(10 / 2)
 
     try:
         message, address = serverSocket.recvfrom(1024)
