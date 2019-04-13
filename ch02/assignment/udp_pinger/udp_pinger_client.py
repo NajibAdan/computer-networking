@@ -1,5 +1,5 @@
 from socket import *
-from datetime import datetime
+import datetime
 import time
 
 # Create a client UDP socket
@@ -16,7 +16,7 @@ lost = 0
 for i in range(0, 10):
 
     # Ping message to be sent
-    time_string = datetime.now().isoformat(sep=' ')
+    time_string = datetime.datetime.now()
     message = "Ping " + str(i+1) + " " + time_string
     print "\n" + message
 
@@ -35,19 +35,21 @@ for i in range(0, 10):
         end = time.clock()
         rtt = end - start
         rtts.append(rtt)
-
-        # Remove timeout
+        
+        # print response
         print "\t" + response
         print "\tCalculated Round Trip Time = " + str(rtt) + " seconds"
+
+        # Remove timeout
         clientSocket.settimeout(None)
 
     except timeout:
+
         # Packet has been lost
         lost += 1
         print "\tRequest timed out"
 
 # Print report
-print "\n"
 print "Maximum RTT = " + str(max(rtts))
 print "Minimum RTT = " + str(min(rtts))
 print "Average RTT = " + str(sum(rtts)/float(len(rtts)))
