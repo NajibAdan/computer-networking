@@ -1,5 +1,5 @@
 from socket import *
-serverName = 'gensokyo'
+serverName = gethostname()
 serverPort = 1200
 clientSocket = socket(AF_INET, SOCK_DGRAM)
 message = raw_input("Input lowercase sentence:")
