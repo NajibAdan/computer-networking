@@ -1,4 +1,5 @@
 from socket import *
+import socket
 import os
 import sys
 import struct
@@ -7,6 +8,7 @@ import select
 import binascii
 
 ICMP_ECHO_REQUEST = 8
+timeRTT = []
 
 def checksum(str):
     csum = 0
@@ -40,16 +42,25 @@ def receiveOnePing(mySocket, ID, timeout, destAddr):
         if whatReady[0] == []: # Timeout
             return "Request timed out."
 
-    timeReceived = time.time()
-    recPacket, addr = mySocket.recvfrom(1024)
+        timeReceived = time.time()
+        recPacket, addr = mySocket.recvfrom(1024)
 
-    #Fill in start
-    #Fetch the ICMP header from the IP packet
-    #Fill in end
+        #Fill in start
+        #Fetch the ICMP header from the IP packet
+        icmpHeader = recPacket[20:28]
+        requestType, code, revChecksum, revId, revSequence = struct.unpack('bbHHh',icmpHeader)
+        if ID == revId:
+            bytesInDouble = struct.calcsize('d')
+            timeData = struct.unpack('d',recPacket[28:28 + bytesInDouble])[0] 
+            timeRTT.append(timeReceived - timeData)
+            return timeReceived - timeData
+        else:
+            return "ID does not match"
+        #Fill in end
 
-    timeLeft = timeLeft - howLongInSelect
-    if timeLeft <= 0:
-        return "Request timed out."
+        timeLeft = timeLeft - howLongInSelect
+        if timeLeft <= 0:
+            return "Request timed out."
 
 def sendOnePing(mySocket, destAddr, ID):
     # Header is type (8), code (8), checksum (16), id (16), sequence (16)
@@ -83,7 +94,7 @@ def doOnePing(destAddr, timeout):
     #Fill in start
 
     #Create Socket here
-
+    mySocket = socket.socket(socket.AF_INET, socket.SOCK_RAW, icmp)
     #Fill in end
     
     myID = os.getpid() & 0xFFFF
@@ -95,16 +106,15 @@ def doOnePing(destAddr, timeout):
     return delay
 
 def ping(host, timeout=1):
-    #timeout=1 means: If one second goes by without a reply from the server,
-    #the client assumes that either the client’s ping or the server’s pong is lost
+    # timeout=1 means: If one second goes by without a reply from the server
     dest = socket.gethostbyname(host)
     print "Pinging " + dest + " using Python:"
     print ""
     #Send ping requests to a server separated by approximately one second
     while 1 :
         delay = doOnePing(dest, timeout)
-        print delay
+        print "RTT: " + str(delay)
         time.sleep(1)# one second
     return delay
 
-ping("www.poly.edu")
+ping("www.google.com")
