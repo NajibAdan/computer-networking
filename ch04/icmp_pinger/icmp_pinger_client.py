@@ -108,8 +108,7 @@ def doOnePing(destAddr, timeout):
 def ping(host, timeout=1):
     # timeout=1 means: If one second goes by without a reply from the server
     dest = socket.gethostbyname(host)
-    print "Pinging " + dest + " using Python:"
-    print ""
+    print "Pinging " + dest + " using Python\n"
     #Send ping requests to a server separated by approximately one second
     while 1 :
         delay = doOnePing(dest, timeout)
