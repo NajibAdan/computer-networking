@@ -35,62 +35,79 @@ def checksum(str):
     return answer
 
 def build_packet():
-# In the sendOnePing() method of the ICMP Ping exercise ,firstly the header of our
-# packet to be sent was made, secondly the checksum was appended to the header and
-# then finally the complete packet was sent to the destination.
-# Make the header in a similar way to the ping exercise.
-# Append checksum to the header.
-# Don’t send the packet yet , just return the final packet in this function.
-# So the function ending should look like this
-# packet = header + data
-# return packet
+    # In the sendOnePing() method of the ICMP Ping exercise ,firstly the header of our
+    # packet to be sent was made, secondly the checksum was appended to the header and
+    # then finally the complete packet was sent to the destination.
+
+    # Make the header in a similar way to the ping exercise.
+    myChecksum = 0
+    myID = os.getpid() & 0xFFFF
+
+    # Make a dummy header with a 0 checksum.
+    # struct -- Interpret strings as packed binary data
+    header = struct.pack("bbHHh", ICMP_ECHO_REQUEST, 0, myChecksum, myID, 1)
+    #header = struct.pack("!HHHHH", ICMP_ECHO_REQUEST, 0, myChecksum, pid, 1)
+    data = struct.pack("d", time.time())
+
+    # Calculate the checksum on the data and the dummy header.
+    # Append checksum to the header.
+    myChecksum = checksum(header + data)    
+    if sys.platform == 'darwin':
+        myChecksum = socket.htons(myChecksum) & 0xffff
+        #Convert 16-bit integers from host to network byte order.
+    else:
+        myChecksum = htons(myChecksum)
+
+    header = struct.pack("bbHHh", ICMP_ECHO_REQUEST, 0, myChecksum, myID, 1)
+    packet = header + data
+    return packet
 
 def get_route(hostname):
     timeLeft = TIMEOUT
     for ttl in xrange(1,MAX_HOPS):
         for tries in xrange(TRIES):
-        destAddr = gethostbyname(hostname)
-        #Fill in start# Make a raw socket named mySocket
-        #Fill in end
-        mySocket.setsockopt(IPPROTO_IP, IP_TTL, struct.pack('I', ttl))
-        mySocket.settimeout(TIMEOUT)
-        try:
-            d = build_packet()
-            mySocket.sendto(d, (hostname, 0))
-            t= time.time()
-            startedSelect = time.time()
-            whatReady = select.select([mySocket], [], [], timeLeft)
-            howLongInSelect = (time.time() - startedSelect)
-            if whatReady[0] == []: # Timeout
-                
-            recvPacket, addr = mySocket.recvfrom(1024)
-            timeReceived = time.time()
-            timeLeft = timeLeft - howLongInSelect
-            if timeLeft <= 0:
-                print "* * * Request timed out."
-        except timeout:
-            continue
-        else:
-            #Fill in start
-            # Fetch the icmp type from the IP packet
+            destAddr = gethostbyname(hostname)
+            #Fill in start# Make a raw socket named mySocket
             #Fill in end
-            if type == 11:
-                bytes = struct.calcsize("d")
-                timeSent = struct.unpack("d", recvPacket[28:28 + bytes])[0]
-                print "%d rtt=%.0f ms   %s" %(ttl,(timeReceived -t)*1000, addr[0])
-            elif type == 3:
-                bytes = struct.calcsize("d")
-                timeSent = struct.unpack("d", recvPacket[28:28 + bytes])[0]
-                print " %d rtt=%.0f ms %s" %(ttl, (timeReceived-t)*1000, addr[0])
-            elif type == 0:
-                bytes = struct.calcsize("d")
-                timeSent = struct.unpack("d", recvPacket[28:28 + bytes])[0]
-                print " %d rtt=%.0f ms %s" %(ttl, (timeReceived-timeSent)*1000, addr[0])
-                return
+            mySocket.setsockopt(IPPROTO_IP, IP_TTL, struct.pack('I', ttl))
+            mySocket.settimeout(TIMEOUT)
+            try:
+                d = build_packet()
+                mySocket.sendto(d, (hostname, 0))
+                t= time.time()
+                startedSelect = time.time()
+                whatReady = select.select([mySocket], [], [], timeLeft)
+                howLongInSelect = (time.time() - startedSelect)
+                if whatReady[0] == []: # Timeout
+                    
+                recvPacket, addr = mySocket.recvfrom(1024)
+                timeReceived = time.time()
+                timeLeft = timeLeft - howLongInSelect
+                if timeLeft <= 0:
+                    print "* * * Request timed out."
+            except timeout:
+                continue
             else:
-                print "error"
-            break
-        finally:
-            mySocket.close()
+                #Fill in start
+                # Fetch the icmp type from the IP packet
+                #Fill in end
+                if type == 11:
+                    bytes = struct.calcsize("d")
+                    timeSent = struct.unpack("d", recvPacket[28:28 + bytes])[0]
+                    print "%d rtt=%.0f ms   %s" %(ttl,(timeReceived -t)*1000, addr[0])
+                elif type == 3:
+                    bytes = struct.calcsize("d")
+                    timeSent = struct.unpack("d", recvPacket[28:28 + bytes])[0]
+                    print " %d rtt=%.0f ms %s" %(ttl, (timeReceived-t)*1000, addr[0])
+                elif type == 0:
+                    bytes = struct.calcsize("d")
+                    timeSent = struct.unpack("d", recvPacket[28:28 + bytes])[0]
+                    print " %d rtt=%.0f ms %s" %(ttl, (timeReceived-timeSent)*1000, addr[0])
+                    return
+                else:
+                    print "error"
+                break
+            finally:
+                mySocket.close()
 
 get_route("google.com")
