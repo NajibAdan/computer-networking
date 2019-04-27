@@ -5,6 +5,7 @@ import struct
 import time
 import select
 import binascii
+import socket
 
 ICMP_ECHO_REQUEST = 8
 MAX_HOPS = 30
@@ -67,7 +68,10 @@ def get_route(hostname):
     for ttl in xrange(1,MAX_HOPS):
         for tries in xrange(TRIES):
             destAddr = gethostbyname(hostname)
-            #Fill in start# Make a raw socket named mySocket
+            #Fill in start
+            # Make a raw socket named mySocket
+            icmp = socket.getprotobyname("icmp")
+            mySocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, icmp)
             #Fill in end
             mySocket.setsockopt(IPPROTO_IP, IP_TTL, struct.pack('I', ttl))
             mySocket.settimeout(TIMEOUT)
@@ -79,17 +83,18 @@ def get_route(hostname):
                 whatReady = select.select([mySocket], [], [], timeLeft)
                 howLongInSelect = (time.time() - startedSelect)
                 if whatReady[0] == []: # Timeout
-                    
-                recvPacket, addr = mySocket.recvfrom(1024)
-                timeReceived = time.time()
-                timeLeft = timeLeft - howLongInSelect
-                if timeLeft <= 0:
-                    print "* * * Request timed out."
+                    recvPacket, addr = mySocket.recvfrom(1024)
+                    timeReceived = time.time()
+                    timeLeft = timeLeft - howLongInSelect
+                    if timeLeft <= 0:
+                        print "* * * Request timed out."
             except timeout:
                 continue
             else:
                 #Fill in start
                 # Fetch the icmp type from the IP packet
+                icmpHeader = recvPacket[20:28]
+                request_type, code, checksum, packetID, sequence = struct.unpack("bbHHh", icmpHeader)
                 #Fill in end
                 if type == 11:
                     bytes = struct.calcsize("d")
